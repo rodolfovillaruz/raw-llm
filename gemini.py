@@ -7,7 +7,7 @@ user input or existing conversation files.
 """
 
 import sys
-from typing import Any, Dict, List, Sequence, Union
+from typing import Any, Dict, List
 
 from google import genai
 from google.genai.types import (
@@ -31,7 +31,7 @@ from common import (
 def stream_gemini_response(
     client: genai.Client,
     model: str,
-    contents: Sequence[Content],  # Changed from List to Sequence
+    contents: list[Content],  # Changed from Sequence[Content]
     config: GenerateContentConfig,
 ) -> str:
     """
@@ -110,11 +110,8 @@ def main() -> None:
     # Build Gemini Content objects
     contents: List[Content] = []
     for msg in messages:
-        role: Union[str, type] = msg["role"]
-        if role == "assistant":
-            role = "model"
+        role_str: str = "model" if msg["role"] == "assistant" else msg["role"]
 
-        # Extract text content safely
         content = msg["content"]
         if isinstance(content, str):
             text_content = content
@@ -122,7 +119,7 @@ def main() -> None:
             text_content = str(content)
 
         part = Part.from_text(text=text_content)
-        contents.append(Content(role=role, parts=[part]))
+        contents.append(Content(role=role_str, parts=[part]))
 
     config_kwargs: Dict[str, Any] = {
         "thinking_config": ThinkingConfig(
