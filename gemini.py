@@ -19,12 +19,11 @@ from google.genai.types import (
     ThinkingLevel,
 )
 
+from common import create_conversation_context  # Add this import
 from common import (
-    ConversationContext,
     StreamPrinter,
     create_parser,
     handle_streaming_error,
-    load_conversation,
     run_conversation_loop,
 )
 
@@ -103,14 +102,7 @@ def main() -> None:
 
     client = genai.Client()
 
-    filename, messages, file_hash = load_conversation(args.conversation_file)
-
-    context = ConversationContext(
-        messages=messages,
-        filename=filename,
-        file_hash=file_hash,
-        model=args.model,
-    )
+    context = create_conversation_context(args.conversation_file, args.model)
 
     run_conversation_loop(
         client,

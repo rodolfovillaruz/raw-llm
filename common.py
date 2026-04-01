@@ -260,6 +260,19 @@ class ConversationContext:
     model: str
 
 
+def create_conversation_context(
+    filepath_arg: Optional[str], model: str
+) -> ConversationContext:
+    """Load conversation and create context."""
+    filename, messages, file_hash = load_conversation(filepath_arg)
+    return ConversationContext(
+        messages=messages,
+        filename=filename,
+        file_hash=file_hash,
+        model=model,
+    )
+
+
 def run_conversation_loop(
     client: Any,
     stream_func: callable,

@@ -15,11 +15,10 @@ import anthropic
 from anthropic.types import MessageParam
 
 from common import (
-    ConversationContext,
     StreamPrinter,
+    create_conversation_context,
     create_parser,
     handle_streaming_error,
-    load_conversation,
     run_conversation_loop,
 )
 
@@ -79,14 +78,7 @@ def main() -> None:
         )
         sys.exit(1)
 
-    filename, messages, file_hash = load_conversation(args.conversation_file)
-
-    context = ConversationContext(
-        messages=messages,
-        filename=filename,
-        file_hash=file_hash,
-        model=model,
-    )
+    context = create_conversation_context(args.conversation_file, args.model)
 
     run_conversation_loop(
         client,
