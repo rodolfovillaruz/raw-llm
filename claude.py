@@ -6,6 +6,7 @@ This script interacts with the Anthropic API to generate content based on
 user input or existing conversation files.
 """
 
+import argparse
 import sys
 from pathlib import Path
 from typing import Iterable
@@ -16,10 +17,9 @@ from anthropic.types import MessageParam
 from common import (
     StreamPrinter,
     create_parser,
-    get_question,
+    handle_streaming_error,
     load_conversation,
-    prompt_preview,
-    save_conversation_safely,
+    run_conversation_loop,
 )
 
 
@@ -27,18 +27,14 @@ def stream_claude_response(
     client: anthropic.Anthropic,
     model: str,
     messages: Iterable[MessageParam],
-    max_tokens: int,
+    args: argparse.Namespace,
 ) -> str:
-    """
-    Stream the response from the Claude API.
-    Returns the full assistant content.
-    """
+    """Stream the response from the Claude API."""
     printer = StreamPrinter()
     assistant_content = []
 
     try:
-        # Anthropic requires max_tokens to be set
-        actual_max_tokens = int(max_tokens) if max_tokens else 20000
+        actual_max_tokens = int(args.max_tokens) if args.max_tokens else 20000
 
         with client.messages.stream(
             max_tokens=actual_max_tokens,
@@ -50,9 +46,7 @@ def stream_claude_response(
                 assistant_content.append(text)
 
     except ConnectionError as e:
-        printer.close()
-        sys.stderr.write(f"\nError during streaming: {e}\n")
-        sys.exit(1)
+        handle_streaming_error(printer, e)
 
     printer.close()
     return "".join(assistant_content)
@@ -86,35 +80,15 @@ def main() -> None:
 
     filename, messages, file_hash = load_conversation(args.conversation_file)
 
-    if args.verbose > 0:
-        sys.stderr.write(f"Model: {args.model}\n\n")
-        sys.stderr.flush()
-
-    question = get_question()
-    if not question:
-        raise ValueError("No messages to send")
-
-    sys.stderr.write("\n")
-    sys.stderr.flush()
-
-    if args.verbose > 0:
-        prompt_preview(question)
-
-    messages.append({"role": "user", "content": question})
-
-    if args.dry_run:
-        sys.exit(0)
-
-    assistant_content = stream_claude_response(
-        client, args.model, messages, args.max_tokens
+    run_conversation_loop(
+        client,
+        stream_claude_response,
+        args.model,
+        messages,
+        args,
+        filename,
+        file_hash,
     )
-
-    messages.append({"role": "assistant", "content": assistant_content})
-
-    sys.stderr.write("\n")
-    sys.stderr.flush()
-
-    save_conversation_safely(messages, filename, file_hash)
 
 
 if __name__ == "__main__":

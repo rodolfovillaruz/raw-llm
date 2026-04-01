@@ -11,7 +11,7 @@ import threading
 import time
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from anthropic.types import MessageParam
 
@@ -247,6 +247,65 @@ def get_colors() -> Dict[str, str]:
     else:
         colors["content"] = colors["content_reset"] = ""
     return colors
+
+
+def run_conversation_loop(
+    client: Any,
+    stream_func: callable,
+    model: str,
+    messages: List[MessageParam],
+    args: argparse.Namespace,
+    filename: Path,
+    file_hash: str,
+) -> None:
+    """
+    Unified conversation loop for Claude and Gemini clients.
+
+    Args:
+        client: The API client (Anthropic or Google GenAI)
+        stream_func: Function that streams the response
+        model: Model name/identifier
+        messages: Conversation messages
+        args: Parsed command-line arguments
+        filename: Conversation file path
+        file_hash: Original file hash for safety check
+    """
+    if args.verbose > 0:
+        sys.stderr.write(f"Model: {model}\n\n")
+        sys.stderr.flush()
+
+    question = get_question()
+    if not question:
+        raise ValueError("No messages to send")
+
+    sys.stderr.write("\n")
+    sys.stderr.flush()
+
+    if args.verbose > 0:
+        prompt_preview(question)
+
+    messages.append({"role": "user", "content": question})
+
+    if args.dry_run:
+        sys.exit(0)
+
+    assistant_content = stream_func(client, model, messages, args)
+
+    messages.append({"role": "assistant", "content": assistant_content})
+
+    sys.stderr.write("\n")
+    sys.stderr.flush()
+
+    save_conversation_safely(messages, filename, file_hash)
+
+
+def handle_streaming_error(
+    printer: StreamPrinter, error: ConnectionError
+) -> None:
+    """Handle connection errors during streaming."""
+    printer.close()
+    sys.stderr.write(f"\nError during streaming: {error}\n")
+    sys.exit(1)
 
 
 class StreamPrinter:

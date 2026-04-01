@@ -6,13 +6,14 @@ This script interacts with the Google GenAI API to generate content based on
 user input or existing conversation files.
 """
 
-import sys
+import argparse
 from typing import Any, Dict, List
 
 from google import genai
 from google.genai.types import (
     Content,
     GenerateContentConfig,
+    MessageParam,
     Part,
     ThinkingConfig,
     ThinkingLevel,
@@ -21,27 +22,41 @@ from google.genai.types import (
 from common import (
     StreamPrinter,
     create_parser,
-    get_question,
+    handle_streaming_error,
     load_conversation,
-    prompt_preview,
-    save_conversation_safely,
+    run_conversation_loop,
 )
 
 
 def stream_gemini_response(
     client: genai.Client,
     model: str,
-    contents: List[Content],
-    config: GenerateContentConfig,
+    messages: List[MessageParam],
+    args: argparse.Namespace,
 ) -> str:
-    """
-    Stream the response from the Gemini API, printing reasoning to stderr
-    and content to stdout. Returns the full assistant content.
-    """
+    """Stream the response from the Gemini API."""
     printer = StreamPrinter()
     assistant_parts = []
 
+    # Convert messages to Gemini Content objects
+    contents = []
+    for msg in messages:
+        role = "model" if msg["role"] == "assistant" else msg["role"]
+        part = Part.from_text(text=msg["content"])
+        contents.append(Content(role=role, parts=[part]))
+
     try:
+        config_kwargs: Dict[str, Any] = {
+            "thinking_config": ThinkingConfig(
+                thinking_level=ThinkingLevel.HIGH,
+                include_thoughts=True,
+            )
+        }
+        if args.max_tokens:
+            config_kwargs["max_output_tokens"] = int(args.max_tokens)
+
+        config = GenerateContentConfig(**config_kwargs)
+
         stream = client.models.generate_content_stream(
             contents=contents,
             model=model,
@@ -58,7 +73,6 @@ def stream_gemini_response(
                     text = part.text
                     if not text:
                         continue
-                    # Gemini marks reasoning with the 'thought' attribute
                     if getattr(part, "thought", False):
                         printer.write_reasoning(text)
                     else:
@@ -66,9 +80,7 @@ def stream_gemini_response(
                         assistant_parts.append(text)
 
     except ConnectionError as e:
-        printer.close()
-        sys.stderr.write(f"\nError during streaming: {e}\n")
-        sys.exit(1)
+        handle_streaming_error(printer, e)
 
     printer.close()
     return "".join(assistant_parts)
@@ -83,60 +95,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Initialize Gemini client
     client = genai.Client()
 
     filename, messages, file_hash = load_conversation(args.conversation_file)
 
-    if args.verbose > 0:
-        sys.stderr.write(f"Model: {args.model}\n\n")
-        sys.stderr.flush()
-
-    question = get_question()
-    if not question:
-        raise ValueError("No messages to send")
-
-    sys.stderr.write("\n")
-    sys.stderr.flush()
-
-    if args.verbose > 0:
-        prompt_preview(question)
-
-    messages.append({"role": "user", "content": question})
-
-    if args.dry_run:
-        sys.exit(0)
-
-    # Build Gemini Content objects
-    contents = []
-    for msg in messages:
-        role = msg["role"]
-        if role == "assistant":
-            role = "model"
-        part = Part.from_text(text=msg["content"])
-        contents.append(Content(role=role, parts=[part]))
-
-    config_kwargs: Dict[str, Any] = {
-        "thinking_config": ThinkingConfig(
-            thinking_level=ThinkingLevel.HIGH,
-            include_thoughts=True,
-        )
-    }
-    if args.max_tokens:
-        config_kwargs["max_output_tokens"] = int(args.max_tokens)
-
-    config = GenerateContentConfig(**config_kwargs)
-
-    assistant_content = stream_gemini_response(
-        client, args.model, contents, config
+    run_conversation_loop(
+        client,
+        stream_gemini_response,
+        args.model,
+        messages,
+        args,
+        filename,
+        file_hash,
     )
-
-    messages.append({"role": "assistant", "content": assistant_content})
-
-    sys.stderr.write("\n")
-    sys.stderr.flush()
-
-    save_conversation_safely(messages, filename, file_hash)
 
 
 if __name__ == "__main__":
