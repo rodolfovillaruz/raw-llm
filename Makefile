@@ -22,3 +22,17 @@ typecheck:
 
 test:
 	pytest $(SRC)
+
+clean:
+	find . -type f -name "*.pyc" -delete
+	find . -type d -name "__pycache__" -delete
+	rm -rf build/ dist/ *.egg-info
+
+build: clean
+	python -m build
+
+publish: build
+	twine upload dist/*
+
+publish-test: build
+	twine upload --repository testpypi dist/*
