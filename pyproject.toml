@@ -3,7 +3,7 @@ requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "simple-llm-chat"
+name = "raw-llm"
 version = "1.0.0"
 description = "The simplest way to context engineer. Minimal streaming CLI clients for Claude and Gemini."
 readme = "README.md"
@@ -43,8 +43,8 @@ dev = [
 ]
 
 [project.scripts]
-simple-claude = "simple_llm.claude:main"
-simple-gemini = "simple_llm.gemini:main"
+raw-claude = "raw_llm.claude:main"
+raw-gemini = "raw_llm.gemini:main"
 
 [project.urls]
 Homepage = "https://github.com/rodolfovillaruz/simple"
@@ -52,7 +52,7 @@ Homepage = "https://github.com/rodolfovillaruz/simple"
 Repository = "https://github.com/rodolfovillaruz/simple.git"
 
 [tool.setuptools]
-packages = ["simple_llm"]
+packages = ["raw_llm"]
 
 [tool.setuptools.package-dir]
 "" = "src"
