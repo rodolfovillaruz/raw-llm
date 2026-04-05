@@ -1,4 +1,4 @@
-# Simple
+# Raw LLM
 
 **The simplest way to context engineer.**
 
@@ -6,7 +6,7 @@ Minimal, streaming CLI clients for Claude and Gemini that keep your conversation
 
 ## What is this?
 
-Simple is a pair of thin Python scripts that talk to the Anthropic and Google GenAI APIs. No frameworks, no agents, no abstractions you don't need. Just a prompt, a streaming response, and a JSON file you can version, diff, edit, and pipe.
+Raw LLM is a pair of thin Python scripts that talk to the Anthropic and Google GenAI APIs. No frameworks, no agents, no abstractions you don't need. Just a prompt, a streaming response, and a JSON file you can version, diff, edit, and pipe.
 
 The entire idea: your conversation _is_ a file. You build context by editing that file. That's it. That's the context engineering.
 
@@ -134,7 +134,7 @@ Conversations are stored as a JSON array of message objects, the same shape both
 ]
 ```
 
-You can create these files by hand, merge them, truncate them, or generate them with other tools. Simple doesn't care. It reads the array, appends your new message, streams the response, and appends that too.
+You can create these files by hand, merge them, truncate them, or generate them with other tools. Raw LLM doesn't care. It reads the array, appends your new message, streams the response, and appends that too.
 
 ## Project structure
 
@@ -161,7 +161,7 @@ make all      # All of the above
 
 ## Why?
 
-Most LLM tools add layers between you and the model. Simple removes them. The conversation is a file. The prompt is stdin. The response is stdout. Everything else is up to you.
+Most LLM tools add layers between you and the model. Raw LLM removes them. The conversation is a file. The prompt is stdin. The response is stdout. Everything else is up to you.
 
 ## License
 
