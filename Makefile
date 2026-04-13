@@ -26,7 +26,8 @@ test:
 clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
-	rm -rf build/ dist/ *.egg-info
+	find . -type d -name "*.egg-info" -exec rm -rf {} +
+	rm -rf build/ dist/
 
 build: clean
 	python -m build
