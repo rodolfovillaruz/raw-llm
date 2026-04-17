@@ -128,9 +128,8 @@ def main() -> None:
 
     filename, messages, file_hash = load_conversation(args.conversation_file)
 
-    if args.verbose > 0:
-        sys.stderr.write(f"Model: {args.model}\n\n")
-        sys.stderr.flush()
+    sys.stderr.write(f"Model: {args.model}\n\n")
+    sys.stderr.flush()
 
     question = get_question()
     if not question:
