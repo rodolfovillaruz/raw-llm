@@ -11,7 +11,11 @@ from pathlib import Path
 from typing import Iterable
 
 import anthropic
-from anthropic.types import MessageParam
+from anthropic.types import (
+    MessageParam,
+    ThinkingConfigAdaptiveParam,
+    ThinkingConfigEnabledParam,
+)
 
 from .common import (
     StreamPrinter,
@@ -23,7 +27,9 @@ from .common import (
 )
 
 
-def _build_thinking_config(model: str, max_tokens: int) -> dict:
+def _build_thinking_config(
+    model: str, max_tokens: int
+) -> ThinkingConfigEnabledParam | ThinkingConfigAdaptiveParam:
     """
     Return the appropriate thinking configuration for the given model.
 
