@@ -8,7 +8,7 @@ user input or existing conversation files.
 
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Dict, Iterable, List, Tuple
 
 import anthropic
 from anthropic.types import (
@@ -22,8 +22,10 @@ from .common import (
     create_parser,
     get_question,
     load_conversation,
+    now_utc,
     prompt_preview,
     save_conversation_safely,
+    strip_metadata,
 )
 
 
@@ -58,13 +60,17 @@ def stream_claude_response(
     model: str,
     messages: Iterable[MessageParam],
     max_tokens: int,
-) -> str:
+) -> Tuple[str, Dict[str, int]]:
     """
     Stream the response from the Claude API with extended thinking.
-    Returns the full assistant content.
+
+    Returns a ``(content, usage)`` tuple where *usage* is a dict with
+    ``input`` and ``output`` token counts.
     """
     printer = StreamPrinter()
-    assistant_content = []
+    assistant_content: List[str] = []
+    input_tokens = 0
+    output_tokens = 0
 
     try:
         actual_max_tokens = int(max_tokens) if max_tokens else 20000
@@ -77,11 +83,15 @@ def stream_claude_response(
             thinking=thinking_config,
         ) as stream:
             for event in stream:
-                if event.type == "content_block_start":
+                if event.type == "message_start":
+                    # input_tokens is known as soon as the response begins
+                    input_tokens = event.message.usage.input_tokens
+                elif event.type == "message_delta":
+                    # output_tokens is finalised in the closing delta
+                    output_tokens = event.usage.output_tokens
+                elif event.type == "content_block_start":
                     if event.content_block.type == "thinking":
                         printer.write_reasoning("")  # activate reasoning color
-                    elif event.content_block.type == "text":
-                        pass
                 elif event.type == "content_block_delta":
                     if event.delta.type == "thinking_delta":
                         printer.write_reasoning(event.delta.thinking)
@@ -95,7 +105,8 @@ def stream_claude_response(
         sys.exit(1)
 
     printer.close()
-    return "".join(assistant_content)
+    usage = {"input": input_tokens, "output": output_tokens}
+    return "".join(assistant_content), usage
 
 
 def main() -> None:
@@ -141,16 +152,30 @@ def main() -> None:
     if args.verbose > 0:
         prompt_preview(question)
 
-    messages.append({"role": "user", "content": question})
+    messages.append(
+        {
+            "role": "user",
+            "content": question,
+            "timestamp": now_utc(),
+        }
+    )
 
     if args.dry_run:
         sys.exit(0)
 
-    assistant_content = stream_claude_response(
-        client, args.model, messages, args.max_tokens
+    # strip_metadata produces a clean List[MessageParam] the API accepts
+    assistant_content, usage = stream_claude_response(
+        client, args.model, strip_metadata(messages), args.max_tokens
     )
 
-    messages.append({"role": "assistant", "content": assistant_content})
+    messages.append(
+        {
+            "role": "assistant",
+            "content": assistant_content,
+            "timestamp": now_utc(),
+            "usage": {"input": usage["input"], "output": usage["output"]},
+        }
+    )
 
     sys.stderr.write("\n")
     sys.stderr.flush()

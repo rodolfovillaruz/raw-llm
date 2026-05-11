@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -23,6 +24,7 @@ except ImportError:
 
 PROMPT_FOLDER = ".prompt"
 EMPTY_HASH = hashlib.sha256(b"").hexdigest()
+_METADATA_KEYS = {"timestamp", "usage"}
 
 
 def spinner_task(
@@ -174,10 +176,32 @@ def create_parser(description: str, model: str) -> argparse.ArgumentParser:
     return parser
 
 
+def now_utc() -> str:
+    """Return the current UTC time as an ISO-8601 string."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def strip_metadata(messages: List[Dict]) -> List[MessageParam]:
+    """
+    Return a copy of *messages* with metadata-only keys removed so the list
+    is safe to pass directly to an API that only expects 'role' and 'content'.
+    """
+    return [
+        {k: v for k, v in msg.items() if k not in _METADATA_KEYS}
+        for msg in messages
+    ]
+
+
 def load_conversation(
     filepath_arg: Optional[str],
-) -> Tuple[Path, List[MessageParam], str]:
-    "Load conversation from file or create new file path if it does not exist."
+) -> Tuple[Path, List[Dict], str]:
+    """
+    Load conversation from file or create new file path if it does not exist.
+
+    The returned message list preserves any metadata fields (e.g. 'timestamp',
+    'usage') stored in the file.  Call :func:`strip_metadata` before passing
+    the list to an LLM API.
+    """
 
     if not filepath_arg:
         if os.path.isdir(PROMPT_FOLDER):
@@ -205,7 +229,7 @@ def load_conversation(
     return filename, json_content, file_hash
 
 
-def save_to_file(messages: list[MessageParam], filename: Path) -> Path:
+def save_to_file(messages: List[Dict], filename: Path) -> Path:
     """Save messages to JSON file."""
     with filename.open("w", encoding="utf-8") as f:
         json.dump(messages, f, indent=2, ensure_ascii=False)
@@ -213,7 +237,7 @@ def save_to_file(messages: list[MessageParam], filename: Path) -> Path:
 
 
 def save_conversation_safely(
-    messages: List[MessageParam], filename: Path, original_hash: str
+    messages: List[Dict], filename: Path, original_hash: str
 ) -> None:
     "Save conversation to file if it hasn't been modified elsewhere."
 
@@ -225,7 +249,7 @@ def save_conversation_safely(
         sys.stderr.write(f"\nSaved to {filename}\n")
     else:
         sys.stderr.write(
-            f"\nError: “{filename}” has been modified by another process.\n"
+            f'\nError: "{filename}" has been modified by another process.\n'
         )
         sys.exit(2)
 
