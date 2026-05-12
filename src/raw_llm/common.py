@@ -24,7 +24,7 @@ except ImportError:
 
 PROMPT_FOLDER = ".prompt"
 EMPTY_HASH = hashlib.sha256(b"").hexdigest()
-_METADATA_KEYS = {"timestamp", "usage"}
+_METADATA_KEYS = {"timestamp", "usage", "model"}
 
 
 def spinner_task(

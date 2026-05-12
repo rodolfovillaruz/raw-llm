@@ -174,6 +174,7 @@ def main() -> None:
             "content": assistant_content,
             "timestamp": now_utc(),
             "usage": {"input": usage["input"], "output": usage["output"]},
+            "model": args.model,
         }
     )
 
