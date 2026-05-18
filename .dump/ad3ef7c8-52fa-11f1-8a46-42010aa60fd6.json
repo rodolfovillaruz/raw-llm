@@ -13,5 +13,20 @@
       "output": 609
     },
     "model": "claude-sonnet-4-6"
+  },
+  {
+    "role": "user",
+    "content": "In 100 words\n\nMake a LinkedIn post about why this change?",
+    "timestamp": "2026-05-18T21:02:49.046871+00:00"
+  },
+  {
+    "role": "assistant",
+    "content": "🚀 Small change, big quality-of-life win in raw-llm v1.0.7.\n\nConversation files now record per-message metadata: timestamps, token usage, and the model that produced each response — right next to the content.\n\nWhy it matters:\n• Audit what was said and *when*\n• Track token spend per turn, not just per session\n• See exactly which model wrote which reply when you switch between Haiku, Sonnet, and Opus mid-conversation\n• Metadata is stripped automatically before hitting the API — zero friction\n\nYour conversation is still just a JSON file you own. Now it tells you more about itself.\n\n#LLM #DeveloperTools #OpenSource",
+    "timestamp": "2026-05-18T21:02:56.875532+00:00",
+    "usage": {
+      "input": 6082,
+      "output": 218
+    },
+    "model": "claude-opus-4-7"
   }
 ]
