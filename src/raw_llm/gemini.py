@@ -7,7 +7,7 @@ user input or existing conversation files.
 """
 
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from google import genai
 from google.genai.types import (
@@ -23,6 +23,7 @@ from .common import (
     create_parser,
     get_question,
     load_conversation,
+    now_utc,
     prompt_preview,
     save_conversation_safely,
 )
@@ -31,15 +32,18 @@ from .common import (
 def stream_gemini_response(
     client: genai.Client,
     model: str,
-    contents: list[Content],  # Changed from Sequence[Content]
+    contents: list[Content],
     config: GenerateContentConfig,
-) -> str:
+) -> Tuple[str, Dict[str, int]]:
     """
     Stream the response from the Gemini API, printing reasoning to stderr
-    and content to stdout. Returns the full assistant content.
+    and content to stdout. Returns a tuple of (assistant_content, usage_dict)
+    with input and output token counts.
     """
     printer = StreamPrinter()
     assistant_parts = []
+    input_tokens = 0
+    output_tokens = 0
 
     try:
         stream = client.models.generate_content_stream(
@@ -49,6 +53,15 @@ def stream_gemini_response(
         )
 
         for chunk in stream:
+            # Capture usage information from response metadata
+            if hasattr(chunk, "usage_metadata") and chunk.usage_metadata:
+                input_tokens = getattr(
+                    chunk.usage_metadata, "prompt_token_count", 0
+                )
+                output_tokens = getattr(
+                    chunk.usage_metadata, "candidates_token_count", 0
+                )
+
             if not chunk.candidates:
                 continue
             for candidate in chunk.candidates:
@@ -71,7 +84,8 @@ def stream_gemini_response(
         sys.exit(1)
 
     printer.close()
-    return "".join(assistant_parts)
+    usage = {"input": input_tokens, "output": output_tokens}
+    return "".join(assistant_parts), usage
 
 
 def main() -> None:
@@ -101,7 +115,13 @@ def main() -> None:
     if args.verbose > 0:
         prompt_preview(question)
 
-    messages.append({"role": "user", "content": question})
+    messages.append(
+        {
+            "role": "user",
+            "content": question,
+            "timestamp": now_utc(),
+        }
+    )
 
     if args.dry_run:
         sys.exit(0)
@@ -131,11 +151,19 @@ def main() -> None:
 
     config = GenerateContentConfig(**config_kwargs)
 
-    assistant_content = stream_gemini_response(
+    assistant_content, usage = stream_gemini_response(
         client, args.model, contents, config
     )
 
-    messages.append({"role": "assistant", "content": assistant_content})
+    messages.append(
+        {
+            "role": "assistant",
+            "content": assistant_content,
+            "timestamp": now_utc(),
+            "usage": {"input": usage["input"], "output": usage["output"]},
+            "model": args.model,
+        }
+    )
 
     sys.stderr.write("\n")
     sys.stderr.flush()
