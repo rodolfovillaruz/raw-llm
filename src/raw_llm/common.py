@@ -130,7 +130,7 @@ def prompt_preview(prompt: str):
         "\n".join(
             [
                 start + asterisks_start,
-                prompt.rstrip(),
+                prompt,
                 end + asterisks_end + "\n\n",
             ]
         )
@@ -172,6 +172,10 @@ def create_parser(description: str, model: str) -> argparse.ArgumentParser:
         "--interactive",
         action="store_true",
         help="Interactive REPL mode (each line is a separate message)",
+    )
+    parser.add_argument(
+        "-r", "--no-strip", action="store_true",
+        help="Preserve trailing whitespace in input"
     )
     return parser
 

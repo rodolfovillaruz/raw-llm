@@ -109,6 +109,9 @@ def main() -> None:
     if not question:
         raise ValueError("No messages to send")
 
+    if not args.no_strip:
+        question = question.rstrip()
+
     sys.stderr.write("\n")
     sys.stderr.flush()
 
