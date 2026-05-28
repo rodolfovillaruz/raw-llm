@@ -146,6 +146,8 @@ def main() -> None:
             "timestamp": now_utc(),
             "usage": {"input": usage["input"], "output": usage["output"]},
             "model": args.model,
+            "library": "OpenAI",
+            "endpoint": NOVITA_BASE_URL,
         }
     )
 
