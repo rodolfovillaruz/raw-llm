@@ -47,6 +47,8 @@ claude = "raw_llm.claude:main"
 sonnet = "raw_llm.claude:main"
 opus = "raw_llm.claude:main"
 gemini = "raw_llm.gemini:main"
+novita = "raw_llm.novita:main"
+deepseek = "raw_llm.novita:main"
 
 [project.urls]
 Homepage = "https://github.com/rodolfovillaruz/raw-llm"
