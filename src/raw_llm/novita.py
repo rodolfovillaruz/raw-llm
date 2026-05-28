@@ -95,13 +95,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Prefer NOVITA_API_KEY, fall back to OPENAI_API_KEY
-    api_key = os.environ.get("NOVITA_API_KEY") or os.environ.get(
-        "OPENAI_API_KEY"
-    )
+    # Prefer NOVITA_API_KEY
+    api_key = os.environ.get("NOVITA_API_KEY")
     if not api_key:
         sys.stderr.write(
-            "Error: set NOVITA_API_KEY (or OPENAI_API_KEY) "
+            "Error: set NOVITA_API_KEY"
             "environment variable.\n"
         )
         sys.exit(1)
