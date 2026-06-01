@@ -145,9 +145,7 @@ def main() -> None:
             "content": assistant_content,
             "timestamp": now_utc(),
             "usage": {"input": usage["input"], "output": usage["output"]},
-            "model": args.model,
-            "library": "OpenAI",
-            "endpoint": NOVITA_BASE_URL,
+            "model": {"name": args.model, "endpoint": NOVITA_BASE_URL, "library": "OpenAI"}
         }
     )
 
