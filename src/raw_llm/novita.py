@@ -99,7 +99,7 @@ def main() -> None:
     api_key = os.environ.get("NOVITA_API_KEY")
     if not api_key:
         sys.stderr.write(
-            "Error: set NOVITA_API_KEY"
+            "Error: set NOVITA_API_KEY "
             "environment variable.\n"
         )
         sys.exit(1)
