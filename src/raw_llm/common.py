@@ -209,7 +209,7 @@ def load_conversation(
 
     if not filepath_arg:
         if os.path.isdir(PROMPT_FOLDER):
-            filename = (Path(PROMPT_FOLDER) / str(uuid.uuid1())).with_suffix(
+            filename = (Path(PROMPT_FOLDER) / str(uuid.uuid4())).with_suffix(
                 ".json"
             )
         else:
