@@ -7,7 +7,7 @@ name = "raw-llm"
 version = "1.0.9"
 description = "The simplest way to context engineer. Minimal streaming CLI clients for Claude and Gemini."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 authors = [
     {name = "Rodolfo Villaruz", email = "rodolfo@yes.ph"}
