@@ -43,9 +43,7 @@ def _build_thinking_config(
     # Opus 4.7+ requires adaptive thinking; older opus (4.6) still accepts
     # manual mode.  The startswith guard also covers future opus releases
     # (4.8, 5.0, …) which will likewise require adaptive thinking.
-    if model.startswith("claude-opus") and not model.startswith(
-        "claude-opus-4-6"
-    ):
+    if model.startswith("claude-opus") and not model.startswith("claude-opus-4-6"):
         return {"type": "adaptive"}
 
     budget_tokens = max(max_tokens - 1024, 1024)
@@ -132,9 +130,7 @@ def main() -> None:
         client = anthropic.Anthropic()
     except ConnectionError as e:
         sys.stderr.write(f"Error initializing Claude client: {e}\n")
-        sys.stderr.write(
-            "Ensure ANTHROPIC_API_KEY environment variable is set.\n"
-        )
+        sys.stderr.write("Ensure ANTHROPIC_API_KEY environment variable is set.\n")
         sys.exit(1)
 
     filename, messages, file_hash = load_conversation(args.conversation_file)

@@ -98,10 +98,7 @@ def main() -> None:
     # Prefer NOVITA_API_KEY
     api_key = os.environ.get("NOVITA_API_KEY")
     if not api_key:
-        sys.stderr.write(
-            "Error: set NOVITA_API_KEY "
-            "environment variable.\n"
-        )
+        sys.stderr.write("Error: set NOVITA_API_KEY environment variable.\n")
         sys.exit(1)
 
     client = OpenAI(api_key=api_key, base_url=NOVITA_BASE_URL)
@@ -145,7 +142,11 @@ def main() -> None:
             "content": assistant_content,
             "timestamp": now_utc(),
             "usage": {"input": usage["input"], "output": usage["output"]},
-            "model": {"name": args.model, "endpoint": NOVITA_BASE_URL, "library": "OpenAI"}
+            "model": {
+                "name": args.model,
+                "endpoint": NOVITA_BASE_URL,
+                "library": "OpenAI",
+            },
         }
     )
 

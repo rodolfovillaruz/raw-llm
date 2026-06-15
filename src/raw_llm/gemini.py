@@ -55,9 +55,7 @@ def stream_gemini_response(
         for chunk in stream:
             # Capture usage information from response metadata
             if hasattr(chunk, "usage_metadata") and chunk.usage_metadata:
-                input_tokens = getattr(
-                    chunk.usage_metadata, "prompt_token_count", 0
-                )
+                input_tokens = getattr(chunk.usage_metadata, "prompt_token_count", 0)
                 output_tokens = getattr(
                     chunk.usage_metadata, "candidates_token_count", 0
                 )

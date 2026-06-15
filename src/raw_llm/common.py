@@ -174,8 +174,10 @@ def create_parser(description: str, model: str) -> argparse.ArgumentParser:
         help="Interactive REPL mode (each line is a separate message)",
     )
     parser.add_argument(
-        "-r", "--no-strip", action="store_true",
-        help="Preserve trailing whitespace in input"
+        "-r",
+        "--no-strip",
+        action="store_true",
+        help="Preserve trailing whitespace in input",
     )
     return parser
 
@@ -191,8 +193,7 @@ def strip_metadata(messages: List[Dict]) -> List[MessageParam]:
     is safe to pass directly to an API that only expects 'role' and 'content'.
     """
     return [
-        {k: v for k, v in msg.items() if k not in _METADATA_KEYS}
-        for msg in messages
+        {k: v for k, v in msg.items() if k not in _METADATA_KEYS} for msg in messages
     ]
 
 
@@ -209,9 +210,7 @@ def load_conversation(
 
     if not filepath_arg:
         if os.path.isdir(PROMPT_FOLDER):
-            filename = (Path(PROMPT_FOLDER) / str(uuid.uuid4())).with_suffix(
-                ".json"
-            )
+            filename = (Path(PROMPT_FOLDER) / str(uuid.uuid4())).with_suffix(".json")
         else:
             filename = Path(str(uuid.uuid1())).with_suffix(".json")
     else:
