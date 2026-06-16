@@ -12,7 +12,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 
 from anthropic.types import MessageParam
 
@@ -192,9 +192,10 @@ def strip_metadata(messages: List[Dict]) -> List[MessageParam]:
     Return a copy of *messages* with metadata-only keys removed so the list
     is safe to pass directly to an API that only expects 'role' and 'content'.
     """
-    return [
-        {k: v for k, v in msg.items() if k not in _METADATA_KEYS} for msg in messages
-    ]
+    return cast(
+        List[MessageParam],
+        [{k: v for k, v in msg.items() if k not in _METADATA_KEYS} for msg in messages],
+    )
 
 
 def load_conversation(

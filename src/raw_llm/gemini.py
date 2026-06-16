@@ -10,7 +10,12 @@ import sys
 from typing import Any, Dict, Tuple
 
 from google import genai
-from google.genai.types import ContentDict, GenerateContentConfig, ThinkingConfig
+from google.genai.types import (
+    ContentDict,
+    ContentListUnionDict,
+    GenerateContentConfig,
+    ThinkingConfig,
+)
 
 from .common import (
     StreamPrinter,
@@ -26,7 +31,7 @@ from .common import (
 def stream_gemini_response(
     client: genai.Client,
     model: str,
-    contents: list[ContentDict],
+    contents: ContentListUnionDict,
     config: GenerateContentConfig,
 ) -> Tuple[str, Dict[str, int]]:
     """
@@ -144,8 +149,10 @@ def main() -> None:
 
     config = GenerateContentConfig(**config_kwargs)
 
+    from typing import cast
+
     assistant_content, usage = stream_gemini_response(
-        client, args.model, contents, config
+        client, args.model, cast(ContentListUnionDict, contents), config
     )
 
     messages.append(
