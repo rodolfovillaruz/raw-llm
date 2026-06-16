@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write   # needed to create GitHub Releases & upload assets
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  # ── Validate the tag matches pyproject.toml version ─────────────────────────
+  validate:
+    name: Validate version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Extract pyproject.toml version
+        id: pyproject_version
+        run: |
+          VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+          echo "version=v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Compare tag vs pyproject.toml
+        run: |
+          TAG="${{ github.ref_name }}"
+          PYPROJECT="${{ steps.pyproject_version.outputs.version }}"
+          if [[ "$TAG" != "$PYPROJECT" ]]; then
+            echo "::error::Git tag ($TAG) does not match pyproject.toml version ($PYPROJECT)"
+            exit 1
+          fi
+
+  # ── Build distributions (sdist + wheel) ────────────────────────────────────
+  build:
+    name: Build distributions
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Generate SHA-256 checksums
+        run: |
+          cd dist
+          sha256sum * > checksums.sha256
+
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  # ── Publish to PyPI ────────────────────────────────────────────────────────
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi   # protected environment with approval gates
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download distribution artefacts
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install twine
+        run: pip install twine
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*
+
+  # ── Create GitHub Release ───────────────────────────────────────────────────
+  github-release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download distribution artefacts
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          TAG="${{ github.ref_name }}"
+          cat <<EOF > release-notes.md
+          ### Installation
+
+          \`\`\`bash
+          pip install raw-llm==${TAG#v}
+          \`\`\`
+
+          ### Checksums
+          \`\`\`
+          $(cat dist/checksums.sha256)
+          \`\`\`
+          EOF
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: "raw-llm ${{ github.ref_name }}"
+          body_path: release-notes.md
+          files: dist/*
+          fail_on_unmatched_files: true
