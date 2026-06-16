@@ -8,7 +8,7 @@ content based on user input or existing conversation files.
 
 import os
 import sys
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from openai import OpenAI
 
@@ -18,6 +18,7 @@ from .common import (
     get_question,
     load_conversation,
     now_utc,
+    MessageParam,
     prompt_preview,
     save_conversation_safely,
     strip_metadata,
@@ -29,7 +30,7 @@ NOVITA_BASE_URL = "https://api.novita.ai/openai"
 def stream_novita_response(
     client: OpenAI,
     model: str,
-    messages: List[Dict],
+    messages: List[MessageParam],
     max_tokens: int | None,
 ) -> Tuple[str, Dict[str, int]]:
     """

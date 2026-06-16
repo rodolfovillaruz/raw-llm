@@ -11,7 +11,7 @@ format:
 	ruff format
 
 typecheck:
-	mypy $(SRC)
+	ty check $(SRC)
 
 test:
 	pytest $(SRC)
