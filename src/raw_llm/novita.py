@@ -8,7 +8,7 @@ content based on user input or existing conversation files.
 
 import os
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 from openai import OpenAI
 

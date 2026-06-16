@@ -7,16 +7,10 @@ user input or existing conversation files.
 """
 
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 from google import genai
-from google.genai.types import (
-    Content,
-    GenerateContentConfig,
-    Part,
-    ThinkingConfig,
-    ThinkingLevel,
-)
+from google.genai.types import ContentDict, GenerateContentConfig, ThinkingConfig
 
 from .common import (
     StreamPrinter,
@@ -32,7 +26,7 @@ from .common import (
 def stream_gemini_response(
     client: genai.Client,
     model: str,
-    contents: list[Content],
+    contents: list[ContentDict],
     config: GenerateContentConfig,
 ) -> Tuple[str, Dict[str, int]]:
     """
@@ -47,7 +41,7 @@ def stream_gemini_response(
 
     try:
         stream = client.models.generate_content_stream(
-            contents=contents,  # type: ignore[arg-type]
+            contents=contents,
             model=model,
             config=config,
         )
@@ -127,8 +121,8 @@ def main() -> None:
     if args.dry_run:
         sys.exit(0)
 
-    # Build Gemini Content objects
-    contents: List[Content] = []
+    # Build Gemini Content objects as dictionaries matching ContentDict
+    contents: list[ContentDict] = []
     for msg in messages:
         role_str: str = "model" if msg["role"] == "assistant" else msg["role"]
 
@@ -138,12 +132,10 @@ def main() -> None:
         else:
             text_content = str(content)
 
-        part = Part.from_text(text=text_content)
-        contents.append(Content(role=role_str, parts=[part]))
+        contents.append({"role": role_str, "parts": [{"text": text_content}]})
 
     config_kwargs: Dict[str, Any] = {
         "thinking_config": ThinkingConfig(
-            thinking_level=ThinkingLevel.HIGH,
             include_thoughts=True,
         )
     }
